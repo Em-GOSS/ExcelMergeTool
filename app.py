@@ -6,7 +6,7 @@ from tkinter import filedialog, messagebox
 
 from openpyxl import load_workbook
 from openpyxl.chart import LineChart, Reference
-from openpyxl.chart.series import SeriesLabel
+from openpyxl.chart.series import Series, SeriesLabel
 
 
 HEADERS = [
@@ -107,9 +107,9 @@ def build_chart(title, y_col_offset, sheet, block_cols):
             min_row=3,
             max_row=last_row,
         )
-        chart.add_data(y_values, titles_from_data=False)
-        chart.set_categories(x_values)
-        chart.series[-1].title = SeriesLabel(v=filename)
+        series = Series(y_values, x_values)
+        series.title = SeriesLabel(v=filename)
+        chart.series.append(series)
     return chart
 
 
