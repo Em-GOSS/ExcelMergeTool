@@ -124,7 +124,7 @@ def rebuild_charts(workbook, data_sheet):
 
     titles = ["Front Left", "Front Right", "Rear Left", "Rear Right", "Average Front", "Average Rear"]
     offsets = [1, 2, 3, 4, 5, 6]
-    positions = ["A1", "T1", "A28", "T28", "A55", "T55"]
+    positions = ["A1", "T1", "A32", "T32", "A63", "T63"]
 
     for title, offset, position in zip(titles, offsets, positions):
         chart = build_chart(title, offset, data_sheet, block_cols)
