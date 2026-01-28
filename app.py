@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -122,29 +124,59 @@ def rebuild_charts(workbook, data_sheet):
 
     titles = ["Front Left", "Front Right", "Rear Left", "Rear Right", "Average Front", "Average Rear"]
     offsets = [1, 2, 3, 4, 5, 6]
-    positions = ["A1", "K1", "A16", "K16", "A31", "K31"]
+    positions = ["A1", "T1", "A28", "T28", "A55", "T55"]
 
     for title, offset, position in zip(titles, offsets, positions):
         chart = build_chart(title, offset, data_sheet, block_cols)
         chart_sheet.add_chart(chart, position)
 
+    workbook.active = workbook.sheetnames.index("Charts")
+
+
+def open_excel(path):
+    if sys.platform.startswith("win"):
+        os.startfile(path)
+        return
+    if sys.platform == "darwin":
+        subprocess.run(["open", path], check=False)
+        return
+    subprocess.run(["xdg-open", path], check=False)
+
 
 def process_files(all_data_path, data_unit_path):
-    filename, headers, data_rows = read_data_unit(data_unit_path)
-    if headers != HEADERS:
-        raise ValueError("数据单元表头必须是: P, FL, FR, RL, RR, Average_Front, Average_Rear")
+    data_unit_paths = []
+    if os.path.isdir(data_unit_path):
+        for entry in sorted(os.listdir(data_unit_path)):
+            if entry.lower().endswith(".xlsx") and not entry.startswith("~$"):
+                data_unit_paths.append(os.path.join(data_unit_path, entry))
+        if not data_unit_paths:
+            raise ValueError("所选文件夹中没有可用的xlsx文件")
+    else:
+        data_unit_paths = [data_unit_path]
 
     workbook = load_workbook(all_data_path)
     data_sheet = workbook.active
 
-    append_data_unit(data_sheet, filename, headers, data_rows)
+    for unit_path in data_unit_paths:
+        filename, headers, data_rows = read_data_unit(unit_path)
+        if headers != HEADERS:
+            raise ValueError("数据单元表头必须是: P, FL, FR, RL, RR, Average_Front, Average_Rear")
+        append_data_unit(data_sheet, filename, headers, data_rows)
     rebuild_charts(workbook, data_sheet)
 
     workbook.save(all_data_path)
+    open_excel(all_data_path)
 
 
 def select_file(entry):
     path = filedialog.askopenfilename(filetypes=[("Excel Files", "*.xlsx")])
+    if path:
+        entry.delete(0, tk.END)
+        entry.insert(0, path)
+
+
+def select_folder(entry):
+    path = filedialog.askdirectory()
     if path:
         entry.delete(0, tk.END)
         entry.insert(0, path)
@@ -159,10 +191,11 @@ def run_gui():
     all_data_entry.grid(row=0, column=1, padx=5, pady=5)
     tk.Button(root, text="选择", command=lambda: select_file(all_data_entry)).grid(row=0, column=2, padx=5, pady=5)
 
-    tk.Label(root, text="数据单元 Excel:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+    tk.Label(root, text="数据单元 Excel 或文件夹:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
     data_unit_entry = tk.Entry(root, width=60)
     data_unit_entry.grid(row=1, column=1, padx=5, pady=5)
-    tk.Button(root, text="选择", command=lambda: select_file(data_unit_entry)).grid(row=1, column=2, padx=5, pady=5)
+    tk.Button(root, text="选择文件", command=lambda: select_file(data_unit_entry)).grid(row=1, column=2, padx=5, pady=5)
+    tk.Button(root, text="选择文件夹", command=lambda: select_folder(data_unit_entry)).grid(row=1, column=3, padx=5, pady=5)
 
     def on_process():
         all_data_path = all_data_entry.get().strip()
