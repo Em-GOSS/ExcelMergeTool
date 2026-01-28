@@ -90,7 +90,7 @@ def build_chart(title, y_col_offset, sheet, block_cols):
     chart.legend.position = "b"
     chart.legend.overlay = False
 
-    for start_col in block_cols:
+    for index, start_col in enumerate(block_cols):
         filename = sheet.cell(row=1, column=start_col).value
         last_row = find_last_data_row(sheet, start_col)
         if last_row < 3:
@@ -109,6 +109,8 @@ def build_chart(title, y_col_offset, sheet, block_cols):
         )
         series = Series(y_values, x_values)
         series.title = SeriesLabel(v=filename)
+        series.idx = index
+        series.order = index
         chart.series.append(series)
     return chart
 
